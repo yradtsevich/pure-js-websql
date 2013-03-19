@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src='https://raw.github.com/kripken/sql.js/master/js/sql.js'></script>
+<script src='../js/purejswebsql.js'></script>
+<script>
+//window.openDatabase = null;
+
+function $(selector) {
+	var id = selector.substring(1); // trivial implementation
+	return document.getElementById(id);
+}
+
+var db = openDatabase('mydb', '1.0', 'my first database', 2 * 1024 * 1024);
+db.transaction(function (tx) {
+	tx.executeSql('DROP TABLE IF EXISTS foo');
+	tx.executeSql('CREATE TABLE IF NOT EXISTS foo (id unique, text)');
+	tx.executeSql('INSERT INTO foo (id, text) VALUES (1, "synergies")');
+}, function(e) {console.log(e)});
+
+function showValues() {
+	db.transaction(function (tx) {
+		tx.executeSql('SELECT * FROM foo', [], function (tx, results) {
+			var len = results.rows.length;
+			var text = '';
+			for (var i = 0; i < len; i++) {
+				text += JSON.stringify(results.rows.item(i)) + '<br/>';
+			}
+			$('#values').innerHTML = text;
+		}, function(e) {console.log(e)});
+	});
+}
+</script>
+<script src=""></script>
+</head>
+<body>
+<input type='button' value='Show result' onclick='showValues()' />
+
+<div id='values'/>
+</body>
+</html>
