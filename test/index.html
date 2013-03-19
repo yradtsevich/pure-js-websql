@@ -12,15 +12,10 @@ function $(selector) {
 }
 
 var db = openDatabase('mydb', '1.0', 'my first database', 2 * 1024 * 1024);
-db.transaction(function (tx) {
-	tx.executeSql('DROP TABLE IF EXISTS foo');
-	tx.executeSql('CREATE TABLE IF NOT EXISTS foo (id unique, text)');
-	tx.executeSql('INSERT INTO foo (id, text) VALUES (1, "synergies")');
-}, function(e) {console.log(e)});
 
 function showValues() {
 	db.transaction(function (tx) {
-		tx.executeSql('SELECT * FROM foo', [], function (tx, results) {
+		tx.executeSql($('#sqlcode').value, [], function (tx, results) {
 			var len = results.rows.length;
 			var text = '';
 			for (var i = 0; i < len; i++) {
@@ -34,6 +29,14 @@ function showValues() {
 <script src=""></script>
 </head>
 <body>
+<textarea id='sqlcode' cols='80' rows='8'>
+DROP TABLE IF EXISTS foo;
+CREATE TABLE IF NOT EXISTS foo (id unique, text);
+INSERT INTO foo (id, text) VALUES (1, "synergies");
+INSERT INTO foo (id, text) VALUES (2, "synergies2");
+SELECT * FROM foo;
+</textarea>
+<br/>
 <input type='button' value='Show result' onclick='showValues()' />
 
 <div id='values'/>
