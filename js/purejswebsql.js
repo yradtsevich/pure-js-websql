@@ -1,3 +1,12 @@
+var DOMEx = function(name, code, description) {
+	this.message = name + ': DOM Exception ' + code;
+	this.name = name;
+	this.code = code;
+	this.stack = (new Error(description)).stack
+};
+DOMEx.prototype = DOMException.prototype;
+DOMEx.__proto__ = DOMException.prototype;
+
 function mysql_real_escape_string(str) { //http://stackoverflow.com/questions/7744912/making-a-javascript-string-sql-friendly
     return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
         switch (char) {
@@ -45,34 +54,46 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 			
 			var Transaction = function() {
 				this._db = that._db;
+				this._sqlQueue = [];
 			};
 			Transaction.prototype.executeSql = function(sqlStatement, values, callback, errorCallback) {
-				var data = this._db.exec(replaceValues(sqlStatement, values));
-				
+				if (arguments.length === 0) {
+					throw new DOMEx('SyntaxError', DOMEx.SYNTAX_ERR, 'An invalid or illegal string was specified.');
+				}
+				values = values || [];
 				var rows = new Array();
 				rows.item = function(i) {return this[i]};
 				
-				for (var i = 0; i < data.length; i++) {
-					var row = {};
-					for (var j = 0; j < data[i].length; j++) {
-						row[ data[i][j].column ] = data[i][j].value;
+				if (sqlStatement != null && sqlStatement != undefined) {
+					
+					var data = this._db.exec(replaceValues(sqlStatement.toString(), values));
+					
+					for (var i = 0; i < data.length; i++) {
+						var row = {};
+						for (var j = 0; j < data[i].length; j++) {
+							row[ data[i][j].column ] = data[i][j].value;
+						}
+						rows[i] = row;
 					}
-					rows[i] = row;
 				}
-				
-				var resultSet = {
-					insertId : 0, // TODO
-					rowsAffected : 0, // TODO
-					rows : rows
-				};
-				callback && callback(this, resultSet);
+
+				if (typeof(callback) === "function") {
+					var resultSet = {
+						insertId : 0, // TODO
+						rowsAffected : 0, // TODO
+						rows : rows
+					};
+					callback(this, resultSet);
+				}
 			};
 			var tx = new Transaction();
 			callback(tx);
 
 			that._db.exec('COMMIT;');
 
-			successCallback && successCallback();
+			if (typeof(successCallback) === "function") {
+				successCallback();
+			}
 		}, 0);
 	};
 	Database.prototype = {
