@@ -1,3 +1,4 @@
+(function(){
 var DOMEx = function(name, code, description) {
 	this.message = name + ': DOM Exception ' + code;
 	this.name = name;
@@ -260,3 +261,4 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 
 	return database;
 }
+})();
