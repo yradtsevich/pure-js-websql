@@ -11,7 +11,7 @@ DOMEx.prototype.constructor = DOMEx;
 var SQLEr = function(message, code) {
 	this.message = message;
 	this.code = code;
-	this.stack = (new Error(description)).stack;
+	this.stack = (new Error(message)).stack;
 }
 SQLEr.prototype = SQLException.prototype;
 SQLEr.__proto__ = SQLException.prototype;
@@ -51,6 +51,26 @@ function throwTypeMismatchErrorIfStringOrNumber(value) {
 		throw new DOMEx('TypeMismatchError', DOMException.TYPE_MISMATCH_ERR, 'The type of an object was incompatible with the expected type of the parameter associated to the object.');
 	}
 }
+
+function convertType(val) {
+	if (val === 'true') {
+		return true;
+	}
+	if (val === 'false') {
+		return false;
+	}
+	if (val === 'null') {
+		return null;
+	}
+	if (isFinite(val)) {
+		var n = parseFloat(val);
+		if (!isNaN(n)) {
+			return n;
+		}
+	}
+	return val;
+}
+	
 
 function sqlEscape(value) {
 	return mysql_real_escape_string(String(value));
@@ -118,8 +138,19 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 					try {
 						data = that._db.exec(executeSqlEntry.sql);
 					} catch (e) {
+						if (typeof(e)==='string') {
+							e = new SQLEr(e, SQLException.SYNTAX_ERR);
+						}
 						if (typeof(executeSqlEntry.errorCallback) === "function") {
-							executeSqlEntry.errorCallback(tx, e);
+							var noSuccess = false;
+							try {
+								noSuccess = executeSqlEntry.errorCallback(tx, e);
+							} catch (e) {
+								noSuccess = true;
+							}
+							if (noSuccess) {
+								throw new SQLEr('the statement callback raised an exception or statement error callback did not return false', SQLException.UNKNOWN_ERR);
+							}
 						} else {
 							throw e;
 						}
@@ -129,7 +160,7 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 						for (var i = 0; i < data.length; i++) {
 							var row = {};
 							for (var j = 0; j < data[i].length; j++) {
-								row[ data[i][j].column ] = data[i][j].value;
+								row[ data[i][j].column ] = convertType(data[i][j].value); // XXX: now converts to the most suitable type, but the type is specified in db
 							}
 							rows[i] = row;
 						}
@@ -146,15 +177,17 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 				}
 			} catch (e) {
 				success = false;
+				that._db.exec('ROLLBACK;');
 				if (typeof(errorCallback) === "function") {
 					errorCallback(e);
 				}
 			}
 
-			that._db.exec('COMMIT;');
-
-			if (success && typeof(successCallback) === "function") {
-				successCallback();
+			if (success) {
+				that._db.exec('COMMIT;');
+				if (typeof(successCallback) === "function") {
+					successCallback();
+				}
 			}
 		}, 0);
 	};
