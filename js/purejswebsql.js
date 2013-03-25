@@ -65,6 +65,13 @@ function replaceValues(statement, values) {
 }
 
 var dbMap = {}; //XXX: memory leaks here if there are multiple databases - need a week reference
+window.addEventListener('unload', function() {
+	for (var name in dbMap) {
+		var data = dbMap[name].db.exportData();
+		localStorage['_db_data_' + name] = String.fromCharCode.apply(null, data);
+		localStorage['_db_version_' + name] = JSON.stringify(dbMap[name].version);
+	}
+});
 
 openDatabase = function(name, version, displayName, estimatedSize, creationCallback) {
 	var Database = function(name, _db) {
@@ -183,6 +190,15 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 	if (dbMap[name]) {
 		_db = dbMap[name].db;
 		var storedVersion = dbMap[name].version;
+		
+		if (version !== '' && storedVersion != version) {
+			throw new DOMEx('InvalidStateError', DOMException.INVALID_STATE_ERR, 'An attempt was made to use an object that is not, or is no longer, usable.');
+		}
+		created = false;
+	} else if (localStorage['_db_data_' + name]) {
+		var data = localStorage['_db_data_' + name].split('').map(function(c) {return c.charCodeAt(0);});
+		_db = SQL.open(data);
+		var storedVersion = JSON.parse(localStorage['_db_version_' + name]);
 		
 		if (version !== '' && storedVersion != version) {
 			throw new DOMEx('InvalidStateError', DOMException.INVALID_STATE_ERR, 'An attempt was made to use an object that is not, or is no longer, usable.');
