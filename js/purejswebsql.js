@@ -22,6 +22,10 @@ SQLEr.prototype.toString = DOMEx.prototype.toString = function() {
 	return 'Error: ' + this.message;
 }
 
+function asyncExec(f) {
+	setTimeout(f, 0);
+}
+
 function mysql_real_escape_string(str) { //http://stackoverflow.com/questions/7744912/making-a-javascript-string-sql-friendly
     return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
         switch (char) {
@@ -77,11 +81,9 @@ function sqlEscape(value) {
 	return mysql_real_escape_string(String(value));
 }
 function replaceValues(statement, values) {
-	//if (values) {
-		for (var i = 0; i < values.length; i++) {
-			statement = statement.replace('?', "'" + sqlEscape(values[i]) + "'"); //TODO: skip escaped question mark
-		}
-	//}
+	for (var i = 0; i < values.length; i++) {
+		statement = statement.replace('?', "'" + sqlEscape(values[i]) + "'"); //TODO: skip escaped question mark
+	}
 	return statement;
 }
 
@@ -101,7 +103,7 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 	};
 	var databaseTransaction = function(callback, errorCallback, successCallback) {
 		var that = this;
-		setTimeout(function() {
+		asyncExec(function() {
 			that._db.exec('BEGIN TRANSACTION;');
 			
 			var Transaction = function() {
@@ -117,9 +119,9 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 				throwTypeMismatchErrorIfStringOrNumber(errorCallback);
 								
 				values = values || [];
-				
+				sqlStatement = String(sqlStatement);
 				this._executeSqlQueue.push({
-					sql : replaceValues(String(sqlStatement), values),
+					sql : replaceValues(sqlStatement, values),
 					callback : callback,
 					errorCallback : errorCallback
 				});				
@@ -136,8 +138,15 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 					rows.item = function(i) {return this[i]};
 					
 					var data = null;
+					var rowsAffected;
+					var insertId = null;
 					try {
+						var previousTotalChanges = that._db.exec('SELECT total_changes()')[0][0].value | 0;
 						data = that._db.exec(executeSqlEntry.sql);
+						rowsAffected = that._db.exec('SELECT total_changes()')[0][0].value - previousTotalChanges; //TODO: optimize this
+						if (rowsAffected > 0) {// XXX: works wrong when DELETE executed
+							insertId = that._db.exec('SELECT last_insert_rowid()')[0][0].value | 0;
+						}
 					} catch (e) {
 						if (typeof(e)==='string') {
 							e = new SQLEr(e, SQLException.SYNTAX_ERR);
@@ -168,8 +177,14 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 
 						if (typeof(executeSqlEntry.callback) === "function") {
 							var resultSet = {
-								insertId : 0, // TODO
-								rowsAffected : 0, // TODO
+								get insertId() {
+									if (insertId !== null) {
+										return insertId;
+									} else {
+										throw new DOMEx('InvalidAccessError', DOMException.INVALID_ACCESS_ERR, 'A parameter or an operation was not supported by the underlying object.');
+									}
+								},
+								rowsAffected : rowsAffected,
 								rows : rows
 							};
 							executeSqlEntry.callback(tx, resultSet);
@@ -187,10 +202,10 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 			if (success) {
 				that._db.exec('COMMIT;');
 				if (typeof(successCallback) === "function") {
-					successCallback();
+					asyncExec(successCallback);
 				}
 			}
-		}, 0);
+		});
 	};
 	Database.prototype = {
 		transaction : databaseTransaction,
@@ -203,9 +218,9 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 		changeVersion : function(oldVersion, newVersion, callback, errorCallback, successCallback) {
 			if (oldVersion != this.version) {
 				if (errorCallback) {
-					setTimeout(function() {
+					asyncExec(function() {
 						errorCallback(new SQLEr('current version of the database and `oldVersion` argument do not match', SQLException.VERSION_ERR));
-					}, 0);
+					});
 				}
 			} else {
 				dbMap[this._name].version = newVersion;
@@ -249,9 +264,9 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 	if (created) {
 		dbMap[name].version = '';
 		if (creationCallback) {
-			setTimeout(function() {
+			asyncExec(function() {
 				creationCallback(database);
-			}, 0);
+			});
 		} else {
 			dbMap[name].version = version;
 		}
