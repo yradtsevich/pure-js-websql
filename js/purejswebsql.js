@@ -141,11 +141,15 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 					var rowsAffected;
 					var insertId = null;
 					try {
-						var previousTotalChanges = that._db.exec('SELECT total_changes()')[0][0].value | 0;
+						var previousTotalChanges = that._db.totalChanges;
+						
 						data = that._db.exec(executeSqlEntry.sql);
-						rowsAffected = that._db.exec('SELECT total_changes()')[0][0].value - previousTotalChanges; //TODO: optimize this
+						
+						var lastInfo = that._db.exec('SELECT total_changes(), last_insert_rowid()');
+						that._db.totalChanges = lastInfo[0][0].value;
+						rowsAffected = that._db.totalChanges - previousTotalChanges;
 						if (rowsAffected > 0) {// XXX: works wrong when DELETE executed
-							insertId = that._db.exec('SELECT last_insert_rowid()')[0][0].value | 0;
+							insertId = lastInfo[0][1].value | 0;
 						}
 					} catch (e) {
 						if (typeof(e)==='string') {
@@ -233,7 +237,6 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 		}
 	};
 
-	//////////////////
 	var _db;
 	var created;
 	if (dbMap[name]) {
@@ -257,7 +260,8 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 		_db = SQL.open();
 		created = true;
 	}
-	//////////////////
+
+	_db.totalChanges = _db.totalChanges | 0;
 	var database = new Database(name, _db);
 	dbMap[name] = {db : _db};
 
