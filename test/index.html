@@ -4,8 +4,10 @@
 <script src='https://raw.github.com/kripken/sql.js/master/js/sql.js'></script>
 <script src='../js/purejswebsql.js'></script>
 <script>
-//window.openDatabase = null;
+openDatabase = purejsOpenDatabase;
+</script>
 
+<script>
 function $(selector) {
 	var id = selector.substring(1); // trivial implementation
 	return document.getElementById(id);
@@ -15,14 +17,28 @@ var db = openDatabase('mydb', '1.0', 'my first database', 2 * 1024 * 1024);
 
 function showValues() {
 	db.transaction(function (tx) {
-		tx.executeSql($('#sqlcode').value, [], function (tx, results) {
-			var len = results.rows.length;
-			var text = '';
-			for (var i = 0; i < len; i++) {
-				text += JSON.stringify(results.rows.item(i)) + '<br/>';
+		var queries = $('#sqlcode').value.split(';');
+		for (var k = 0; k < queries.length; k++) {
+			queries[k] = queries[k].trim();
+			if (queries[k].length === 0) {
+				queries.splice(k, 1);
+				k--;
 			}
-			$('#values').innerHTML = text;
-		}, function(e) {console.log(e)});
+		};
+		for (var j = 0; j < queries.length - 1; j++) {
+			tx.executeSql(queries[j], [], function(){}, function(tx, e) {console.log(e)});
+		}
+
+		if (queries.length > 0) {
+			tx.executeSql(queries[queries.length - 1], [], function (tx, results) {
+				var len = results.rows.length;
+				var text = '';
+				for (var i = 0; i < len; i++) {
+					text += JSON.stringify(results.rows.item(i)) + '<br/>';
+				}
+				$('#values').innerHTML = text;
+			}, function(tx, e) {console.log(e)});
+		}
 	});
 }
 </script>

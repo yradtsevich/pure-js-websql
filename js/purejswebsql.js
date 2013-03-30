@@ -1,4 +1,4 @@
-(function(){
+purejsOpenDatabase = (function(){
 var DOMEx = function(name, code, description) {
 	this.message = name + ': DOM Exception ' + code;
 	this.name = name;
@@ -96,7 +96,7 @@ window.addEventListener('unload', function() {
 	}
 });
 
-openDatabase = function(name, version, displayName, estimatedSize, creationCallback) {
+var openDatabase = function(name, version, displayName, estimatedSize, creationCallback) {
 	var Database = function(name, _db) {
 		this._name = name;
 		this._db = _db;
@@ -280,4 +280,6 @@ openDatabase = function(name, version, displayName, estimatedSize, creationCallb
 
 	return database;
 }
+
+return openDatabase;
 })();
