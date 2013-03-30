@@ -1,4 +1,5 @@
-purejsOpenDatabase = (function(){
+(function(window) {
+
 var DOMEx = function(name, code, description) {
 	this.message = name + ': DOM Exception ' + code;
 	this.name = name;
@@ -14,8 +15,10 @@ var SQLEr = function(message, code) {
 	this.code = code;
 	this.stack = (new Error(message)).stack;
 }
-SQLEr.prototype = SQLException.prototype;
-SQLEr.__proto__ = SQLException.prototype;
+if (window.SQLException) {
+	SQLEr.prototype = SQLException.prototype;
+	SQLEr.__proto__ = SQLException.prototype;
+}
 SQLEr.prototype.constructor = SQLEr;
 
 SQLEr.prototype.toString = DOMEx.prototype.toString = function() {
@@ -53,7 +56,7 @@ function mysql_real_escape_string(str) { //http://stackoverflow.com/questions/77
 
 function throwTypeMismatchErrorIfStringOrNumber(value) {
 	if (typeof(value) === 'string' || typeof(value) === 'number') {
-		throw new DOMEx('TypeMismatchError', DOMException.TYPE_MISMATCH_ERR, 'The type of an object was incompatible with the expected type of the parameter associated to the object.');
+		throw new DOMEx('TypeMismatchError', 17 /*DOMException.TYPE_MISMATCH_ERR*/, 'The type of an object was incompatible with the expected type of the parameter associated to the object.');
 	}
 }
 
@@ -96,7 +99,7 @@ window.addEventListener('unload', function() {
 	}
 });
 
-var openDatabase = function(name, version, displayName, estimatedSize, creationCallback) {
+var purejsOpenDatabase = function(name, version, displayName, estimatedSize, creationCallback) {
 	var Database = function(name, _db) {
 		this._name = name;
 		this._db = _db;
@@ -112,7 +115,7 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 			};
 			Transaction.prototype.executeSql = function(sqlStatement, values, callback, errorCallback) {
 				if (arguments.length === 0) {
-					throw new DOMEx('SyntaxError', DOMException.SYNTAX_ERR, 'An invalid or illegal string was specified.');
+					throw new DOMEx('SyntaxError', 12 /*DOMException.SYNTAX_ERR*/, 'An invalid or illegal string was specified.');
 				}
 				throwTypeMismatchErrorIfStringOrNumber(values);
 				throwTypeMismatchErrorIfStringOrNumber(callback);
@@ -185,7 +188,7 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 									if (insertId !== null) {
 										return insertId;
 									} else {
-										throw new DOMEx('InvalidAccessError', DOMException.INVALID_ACCESS_ERR, 'A parameter or an operation was not supported by the underlying object.');
+										throw new DOMEx('InvalidAccessError', 15 /*DOMException.INVALID_ACCESS_ERR*/, 'A parameter or an operation was not supported by the underlying object.');
 									}
 								},
 								rowsAffected : rowsAffected,
@@ -217,7 +220,7 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 		get version() {
 			return dbMap[this._name].version;
 		},
-		set version() {// must use change version
+		set version(ver) {// changeVersion() must be used
 		},
 		changeVersion : function(oldVersion, newVersion, callback, errorCallback, successCallback) {
 			if (oldVersion != this.version) {
@@ -244,7 +247,7 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 		var storedVersion = dbMap[name].version;
 		
 		if (version !== '' && storedVersion != version) {
-			throw new DOMEx('InvalidStateError', DOMException.INVALID_STATE_ERR, 'An attempt was made to use an object that is not, or is no longer, usable.');
+			throw new DOMEx('InvalidStateError', 11 /*DOMException.INVALID_STATE_ERR*/, 'An attempt was made to use an object that is not, or is no longer, usable.');
 		}
 		created = false;
 	} else if (localStorage['_db_data_' + name]) {
@@ -253,7 +256,7 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 		var storedVersion = JSON.parse(localStorage['_db_version_' + name]);
 		
 		if (version !== '' && storedVersion != version) {
-			throw new DOMEx('InvalidStateError', DOMException.INVALID_STATE_ERR, 'An attempt was made to use an object that is not, or is no longer, usable.');
+			throw new DOMEx('InvalidStateError', 11 /*DOMException.INVALID_STATE_ERR*/, 'An attempt was made to use an object that is not, or is no longer, usable.');
 		}
 		created = false;
 	} else {
@@ -281,5 +284,6 @@ var openDatabase = function(name, version, displayName, estimatedSize, creationC
 	return database;
 }
 
-return openDatabase;
-})();
+window.purejsOpenDatabase = purejsOpenDatabase;
+
+})(window);
