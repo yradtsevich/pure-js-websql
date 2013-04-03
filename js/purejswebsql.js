@@ -1,3 +1,12 @@
+/*!
+ * Pure-JS-WebSQL JavaScript Library
+ *
+ * Copyright 2013 Red Hat, Inc.
+ * Released under the MIT license
+ * http://opensource.org/licenses/MIT
+ *
+ * Author: Yahor Radtsevich
+ */
 (function(window) {
 
 var DOMEx = function(name, code, description) {
