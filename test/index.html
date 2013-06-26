@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src='https://raw.github.com/kripken/sql.js/master/js/sql.js'></script>
+<script src='sql.js'></script><!--you should get updated version from https://github.com/kripken/sql.js-->
 <script src='../js/purejswebsql.js'></script>
 <script>
 openDatabase = purejsOpenDatabase;
@@ -45,12 +45,31 @@ function showValues() {
 <script src=""></script>
 </head>
 <body>
-<textarea id='sqlcode' cols='80' rows='8'>
-DROP TABLE IF EXISTS foo;
-CREATE TABLE IF NOT EXISTS foo (id unique, text);
-INSERT INTO foo (id, text) VALUES (1, "synergies");
-INSERT INTO foo (id, text) VALUES (2, "synergies2");
-SELECT * FROM foo;
+<textarea id='sqlcode' cols='100' rows='25'>
+DROP TABLE IF EXISTS student;
+DROP TABLE IF EXISTS class;
+CREATE TABLE class (
+   id    INTEGER PRIMARY KEY AUTOINCREMENT,
+   name  TEXT
+);
+CREATE TABLE student (
+   id          INTEGER PRIMARY KEY AUTOINCREMENT,
+   first_name  TEXT,
+   last_name   TEXT,
+   classid     INTEGER,
+   FOREIGN KEY(classid) REFERENCES class(id)
+);
+INSERT INTO  class(id, name) VALUES (1, "Physics");
+INSERT INTO  class(id, name) VALUES (2, "Mathematics");
+INSERT INTO  student(first_name, last_name, classid) VALUES ("Bob", "Smith", "1");
+INSERT INTO  student(first_name, last_name, classid) VALUES ("Pete", "Brown", "2");
+INSERT INTO  student(first_name, last_name, classid) VALUES ("Robert", "Carter", "2");
+INSERT INTO  student(first_name, last_name, classid) VALUES ("Aaron", "Yong", "2");
+
+SELECT c.name className, s.first_name firstName, s.last_name lastName 
+   FROM student s 
+   JOIN class c ON s.classid=c.id WHERE c.id=2
+   ORDER BY s.first_name;
 </textarea>
 <br/>
 <input type='button' value='Show result' onclick='showValues()' />

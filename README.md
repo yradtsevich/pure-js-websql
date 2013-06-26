@@ -3,7 +3,7 @@ Pure-JS-WebSQL is an implementation of [Web SQL Database API](http://www.w3.org/
 The implementation provides a glue between Web SQL Database API and [SQL.js](https://github.com/kripken/sql.js) (SQLite port to JavaScript). The data between sessions is stored in the `localStorage`.
 
 ## Demo
-[Pure-JS-WebSQL Demo](http://htmlpreview.github.com/?https://github.com/yradtsevich/pure-js-websql/blob/master/test/index.html). It should work in any Gecko- or WebKit-based browser.
+[Pure-JS-WebSQL Demo](http://yradtsevich.github.io/pure-js-websql/test/index.html). It should work in any Gecko- or WebKit-based browser.
 
 ## Usage
 
