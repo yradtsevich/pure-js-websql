@@ -10,6 +10,8 @@ The implementation provides a glue between Web SQL Database API and [SQL.js](htt
 ```html
 <html>
 <head>
+   <!--Note: GitHub does not allow linking to .js files on their servers anymore.
+       You must download two following .js files and host them on your own server. -->
    <script src='https://raw.github.com/kripken/sql.js/master/js/sql.js'></script>
    <script src='https://raw.github.com/yradtsevich/pure-js-websql/master/js/purejswebsql.js'></script>
    <script>
