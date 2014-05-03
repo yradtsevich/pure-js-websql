@@ -99,7 +99,7 @@ function replaceValues(statement, values) {
 	return statement;
 }
 
-var dbMap = {}; //XXX: memory leaks here if there are multiple databases - need a week reference
+var dbMap = {}; //XXX: memory leaks here if there are multiple databases - need a weak reference
 if (localStorage) { // we can persist our DB only if the browser supports localStorage 
 	window.addEventListener('unload', function() {
 		for (var name in dbMap) {
