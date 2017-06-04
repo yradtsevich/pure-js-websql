@@ -33,3 +33,7 @@ The implementation provides a glue between Web SQL Database API and [SQL.js](htt
 ```
 ## License
 Pure-JS-WebSQL is released under the [MIT license](http://opensource.org/licenses/MIT).
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/yradtsevich/pure-js-websql/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
